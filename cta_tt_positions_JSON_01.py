@@ -1,47 +1,63 @@
+################################################################################
 ## Neal Dreher 20171209 nealalan.com
 ## Python3 Script
 ##
-## CHICAGO TRANSIT AUTHORITY "CTA" TRAIN TRACKER API
-## http://www.transitchicago.com/developers/traintracker.aspx
-## http://www.transitchicago.com/developers/ttdocs/default.aspx
+## PROJECT:
+##  CHICAGO TRANSIT AUTHORITY "CTA" TRAIN TRACKER API
+##      http://www.transitchicago.com/developers/traintracker.aspx
+##      http://www.transitchicago.com/developers/ttdocs/default.aspx
 ##
-## READ IN CTA TRAIN POSITION DATA AND PARSE IT OUT
+## INPUT:
+##  READ IN CTA TRAIN POSITION DATA AND PARSE IT OUT
+##  ADD TO URL FOR JSON: &outputType=JSON
 ##
-## ADD TO URL FOR JSON: &outputType=JSON
+## OUTPUT:
 ##
-## ctatt           Root element
-## ./tmst          Shows time when response was generated in format: yyyyMMdd HH:mm:ss (24-hour format, time local to Chicago)
-## ./errCd         Numeric error code (see appendices)
-## ./errNm         Textual error description/message (see appendices)
-## ./route name=   Container element (one per route in response), name attribute indicates route per GTFS-matching route identifiers (see appendices)
-## ././train       Container element (one per train in response)
-## ./././rn        Run number
-## ./././destSt    GTFS unique stop ID where this train is expected to ultimately end its service run (experimental and supplemental only—see note below)
-## ./././destNm    Friendly destination description (see note below)
-## ./././trDr      Numeric train route direction code (see appendices)
-## ./././nextStaId Next station ID (parent station ID matching GTFS)
-## ./././nextStpId Next stop ID (stop ID matching GTFS)
-## ./././nextStaNm Proper name of next station
-## ./././prdt      Date-time format stamp for when the prediction was generated: yyyyMMdd HH:mm:ss (24-hour format, time local to Chicago)
-## ./././arrT      Date-time format stamp for when a train is expected to arrive/depart: yyyyMMdd HH:mm:ss (24-hour format, time local to Chicago)
-## ./././isApp     Indicates that Train Tracker is now declaring “Approaching” or “Due” on site for this train
-## ./././isDly     Boolean flag to indicate whether a train is considered “delayed” in Train Tracker
-## ./././flags     Train flags (not presently in use)
-## ./././lat       Latitude position of the train in decimal degrees
-## ./././lon       Longitude position of the train in decimal degrees
-## ./././heading   Heading, expressed in standard bearing degrees (0 = North, 90 = East, 180 = South, and 270 = West; range is 0 to 359, progressing clockwise)
 ##
-
+################################################################################
+#
+# INPUT DATA FORMAT
+#{'ctatt':
+# {'tmst': '2018-03-05T01:59:10',
+# 'errCd': '0',
+# 'errNm': None,
+# 'route': [{'@name': 'g'},
+#           {'@name': 'y',
+#            'train': {'rn': '030',
+#                      .....
+#                      'heading': '302'}
+#           {'@name': 'blue',
+#            'train': [{'rn': '125',
+#                        'destSt': '30171',
+#                        'destNm': "O'Hare",
+#                          'trDr': '1',
+#                     'nextStaId': '40320',
+#                     'nextStpId': '30062',
+#                     'nextStaNm': 'Division',
+#                          'prdt': '2018-03-05T01:58:40',
+#                          'arrT': '2018-03-05T02:00:40',
+#                         'isApp': '0',
+#                         'isDly': '0',
+#                         'flags': None,
+#                           'lat': '41.89932', 'lon': '-87.66022',
+#                       'heading': '302'},
+#                      {'rn': '127', 'destSt': '30171', 'destNm': "O'Hare", 'trDr': '1', 'nextStaId': '40750', 'nextStpId': '30145', 'nextStaNm': "Harlem (O'Hare Branch)", 'prdt': '2018-03-05T01:58:33', 'arrT': '2018-03-05T02:00:33', 'isApp': '0', 'isDly': '0', 'flags': None, 'lat': '41.98244', 'lon': '-87.7851', 'heading': '278'},
+################################################################################
+################################################################################
 import sys, time
-from datetime import datetime
-#import requests
+import datetime
+import requests
+import json
 import urllib.request
-from bs4 import BeautifulSoup
+#from bs4 import BeautifulSoup
+import secretapikey
+
+DATETIME_JSON_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
 ## GET THE DIFFERENCE IN MINUTES BETWEEN TWO DATE TIMES
 def text_time_difference_minutes(dt1):
-    dt1 = datetime.strptime(dt1 , '%Y%m%d %H:%M:%S')
-    return round(abs(dt1-(datetime.now())).total_seconds() / 60)
+    dt1 = datetime.datetime.strptime(dt1 , DATETIME_JSON_FORMAT)
+    return round(abs(dt1-(datetime.datetime.now())).total_seconds() / 60)
 
 ## SET THE NAME OF THE LINE TO SOMETHING MORE USER FRIENDLY
 def expand_lines_name(arg):
@@ -55,57 +71,69 @@ def expand_lines_name(arg):
         "p": "Purple",
         "y": "Yellow"
     }
-    return switcher.get(arg, run[count].get_text())
+    return switcher.get(arg)
 
-def determine_line_name(arg):
-    switcher = {
-
-    }
+def train_run_print_line(line_name, arg):
+    nextStation = arg['nextStaNm']
+    run = arg['rn']
+    stopID = arg['nextStpId']
+    trainDestination = arg['destNm']
+    estArrivalTime = arg['arrT']
+    print('{00:{width}}'.format(text_time_difference_minutes(estArrivalTime),width=2), "min", expand_lines_name(line_name), "run", run, "to",'{:{width}}'.format(trainDestination,width=14), trainDestination, stopID, "is next.")
     return
 
+
 ## ACCESS THE CTA DATASET - TRAIN ARRIVALS BY A PARTICULAR STATION
-key = ""
 map_id = "40380"
 route_id = "G,Blue,Red,Brn,Y,Org,Pink,P"
-#url = "http://lapi.transitchicago.com/api/1.0/ttarrivals.aspx?key=" + key + "&mapid=" + map_id
-url = "http://lapi.transitchicago.com/api/1.0/ttpositions.aspx?key=" + key + "&rt=" + route_id
-req = requests.get(url)
+file_format = "&outputType=JSON"
+url = "http://lapi.transitchicago.com/api/1.0/ttpositions.aspx?key=" + secretapikey.cta_api_key + "&rt=" + route_id + file_format
+## need error handling code for when the site can't be reached or internet connectivity is down
+req = urllib.request.Request(url)
+print(url)
 
-## CHECK FOR HTTP REQUEST ERRORS, 200 = OK
-if (req.status_code != 200): print("ERROR: ", req.status_code)
-if (req.status_code >= 400 | req.status_code <= 499): print("You messed up!")
-if (req.status_code >= 500 | req.status_code <= 599): print("Server messed up!")
+##PARSE RESPONSE INTO A DICTIONARY OBJECT
+r = urllib.request.urlopen(req).read() # bytes of data
+trains_data = json.loads(r.decode('utf-8')) # dict object
 
 ## PRINT THE ENTIRE DATASET RECEIVED
-#print(req.text)
+#print(trains_data)
 
-##PARSE RESPONSE USING BeautifulSoup4
-train_arrivals = BeautifulSoup(req.text, 'xml')
-#print(type(train_arrivals))
-errCd = train_arrivals.find_all('errCd')
-if (errCd[0].get_text() != "0"): print("Source data error: ", errCd)
-tmst = train_arrivals.find_all('tmst')
+## CHECK FOR REQUEST ERRORS
+if (trains_data['ctatt']['errCd'] != '0'): print("ERROR: ", trains_data['ctatt']['errCd'])
 
-##PARSE DATA FROM RESPONSE
-stations = train_arrivals.find_all('nextStaNm')
-run = train_arrivals.find_all('rn')
-stopIDs = train_arrivals.find_all('nextStpId')
-stopDestinations = train_arrivals.find_all('nextStaNm')
-trainDestination = train_arrivals.find_all('destNm')
-estArrivalTime = train_arrivals.find_all('arrT')
+## CHECK THE TIMESTAMP OF THE DATA VS THE CURRENT TIME
+if text_time_difference_minutes(trains_data['ctatt']['tmst']) != 0:
+    print("DATA DELAY: ", text_time_difference_minutes(trains_data['ctatt']['tmst']), "minutes")
 
-print(text_time_difference_minutes(tmst[0].get_text()))
+## REPORT HEADING
+print("\nCTA TRAIN POSITIONS", datetime.datetime.strptime(trains_data['ctatt']['tmst'], '%Y-%m-%dT%H:%M:%S'), "\n")
 
-print("\nCTA TRAIN POSITIONS", tmst[0].get_text(), "\n")
-
+## PARSE DATASET
+# trains_data file / ctatt dataset / route by color / train run
+# - loop through the routes to pull out the color
+# - validate the route has runs using .get
+# - loop through the runs within the routes
+# - extract the data for the train
 count = 0
-for item in stations:
-    print(
-        '{00:{width}}'.format(text_time_difference_minutes(estArrivalTime[count].get_text()),width=2),
-        "min", expand_lines_name(run[count].parent.parent['name']),
-        "run", run[count].get_text(),
-        "to",'{:{width}}'.format(trainDestination[count].get_text(),width=14),
-        stopDestinations[count].get_text(),
-        stopIDs[count].get_text(), "is next.")
+for train_rt in trains_data['ctatt']['route']:
+    line_name = train_rt['@name']
+    if train_rt.get('train') != None:
+        for train_run in train_rt['train']:
+            train_run_print_line(line_name, train_run)
+            count = count + 1
 
-    count = count + 1
+quit()
+
+
+######
+#for train_rt in trains_data['ctatt']['route']:
+#    line_name = train_rt['@name']
+#
+#    train_runs = train_rt.get('train', [])
+#    if not isinstance(train_runs, list):
+#        # single entry, wrap
+#        train_runs = [train_runs]
+#
+#    for train_run in train_runs:
+#        # ...

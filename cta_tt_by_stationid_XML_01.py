@@ -36,6 +36,7 @@ import sys, time
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
+import secretapikey
 
 ## GET THE DIFFERENCE IN MINUTES BETWEEN TWO DATE TIMES
 def text_time_difference_minutes(dt1):
@@ -55,9 +56,8 @@ def expand_lines_name(arg):
     return switcher.get(arg, route[count].get_text())
 
 ## ACCESS THE CTA DATASET - TRAIN ARRIVALS BY A PARTICULAR STATION
-key = ""
 map_id = "40380"
-url = "http://lapi.transitchicago.com/api/1.0/ttarrivals.aspx?key=" + key + "&mapid=" + map_id
+url = "http://lapi.transitchicago.com/api/1.0/ttarrivals.aspx?key=" + secretapikey.cta_api_key + "&mapid=" + map_id
 req = requests.get(url)
 
 ## CHECK FOR HTTP REQUEST ERRORS, 200 = OK
