@@ -1,6 +1,7 @@
 ## [nealalan.github.io](https://nealalan.github.io)/[Transportation](https://nealalan.github.io/Transportation) ([repo](https://github.com/nealalan/Transportation))
 
-### divvy_json03.py  Clean up the output of the generated data report.
+### [divvy_json03.py](./divvy_json03.py)
+This python3 script will pull publically available JSON datasets containing realtime data for the Chicago DIVVY Bike Share Stations. Here's the output:
 
 ![](https://github.com/nealalan/Transportation/blob/master/divvy_json03.jpg?raw=true)
 
