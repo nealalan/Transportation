@@ -9,7 +9,7 @@ Here's the output:
 
 ![](https://github.com/nealalan/Transportation/blob/master/divvy_json03.jpg?raw=true)
 
-### divvy_json02.py  Pull the Chicago Divvy Bike JSON data, generate a data report
+### divvy_json02.py
 This python3 script will pull publically available JSON datasets containing realtime data for the Chicago DIVVY Bike Share Stations. Here's the output:
 
 ![](https://github.com/nealalan/Transportation/blob/master/divvy_json02a.jpg?raw=true)
