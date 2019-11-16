@@ -15,6 +15,12 @@ This python3 script will pull publically available JSON datasets containing real
 ![](https://github.com/nealalan/Transportation/blob/master/divvy_json02a.jpg?raw=true)
 ![](https://github.com/nealalan/Transportation/blob/master/divvy_json02b.jpg?raw=true)
 
+### [cta_tt_positions_JSON_01.py](https://github.com/nealalan/Transportation/blob/master/cta_tt_positions_JSON_01.py)
+Pull the Chicago Transit Authority realtime transit data and display all active trains and next stop.
+
+![](https://github.com/nealalan/Transportation/blob/master/cta_tt_positions_JSON_01a.jpg?raw=true)
+![](https://github.com/nealalan/Transportation/blob/master/cta_tt_positions_JSON_01b.jpg?raw=true)
+
 ### cta_tt_by_stationid_XML_01.py  
 Pull the Chicago Transit Authority realtime transit data by stationName. **Needs updates**
 
