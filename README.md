@@ -4,6 +4,8 @@
 This python3 script will pull publically available JSON datasets containing realtime data for the Chicago DIVVY Bike Share Stations. The difference between 02 and 03:
 - divvy_json03.py = a summary / report 
 - divvy_json02.py = all data in the dataset
+- [station_information.json](https://github.com/nealalan/Transportation/blob/master/station_information.json) = sample data with the station information (text name, capacity)
+- [station_status.json](https://github.com/nealalan/Transportation/blob/master/station_status.json) = sample data with all station current bikes and avail docks
 
 Here's the output:
 
@@ -17,6 +19,7 @@ This python3 script will pull publically available JSON datasets containing real
 
 ### [cta_tt_positions_JSON_01.py](https://github.com/nealalan/Transportation/blob/master/cta_tt_positions_JSON_01.py)
 Pull the Chicago Transit Authority realtime transit data and display all active trains and next stop.
+- [ttpositions.json](https://github.com/nealalan/Transportation/blob/master/ttpositions.json) - sample JSON data with the issue of missing and varying datatypes
 
 ![](https://github.com/nealalan/Transportation/blob/master/cta_tt_positions_JSON_01a.jpg?raw=true)
 ![](https://github.com/nealalan/Transportation/blob/master/cta_tt_positions_JSON_01b.jpg?raw=true)
