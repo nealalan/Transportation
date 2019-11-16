@@ -86,7 +86,6 @@ def train_run_print_line(line_name, runItem):
         "to",'{:{width}}'.format(trainDestination,width=14),
         stopName, "is next.")
 
-
 ## ACCESS THE CTA DATASET 
 #  - TRAIN ARRIVALS BY A PARTICULAR STATION
 # need error handling code for when the site can't be reached or internet connectivity is down
