@@ -1,26 +1,27 @@
 ################################################################################
-## Neal Dreher 20171209 nealalan.com
-## Python3 Script
-##
-## PROJECT:
-##  CHICAGO TRANSIT AUTHORITY "CTA" TRAIN TRACKER API
-##      http://www.transitchicago.com/developers/traintracker.aspx
-##      http://www.transitchicago.com/developers/ttdocs/default.aspx
-##
-## INPUT:
-##  READ IN CTA TRAIN POSITION DATA AND PARSE IT OUT
-##  ADD TO URL FOR JSON: &outputType=JSON
-##
-## OUTPUT:
-##
-##
-################################################################################
+# Neal Dreher 20171209  updated 2019-11-15
+# https://github.com/nealalan/Transportation/blob/master/cta_tt_positions_JSON_01.py
 #
-# INPUT DATA FORMAT
+# PROJECT:
+#  CHICAGO TRANSIT AUTHORITY "CTA" TRAIN TRACKER API
+#      http://www.transitchicago.com/developers/traintracker.aspx
+#      http://www.transitchicago.com/developers/ttdocs/default.aspx
+#
+# INPUT:
+#  READ IN CTA TRAIN POSITION DATA AND PARSE IT OUT
+#  ADD TO URL FOR JSON: &outputType=JSON
+#
+# OUTPUT:
+# CTA TRAIN POSITIONS 2019-11-15 18:47:43
+
+#  2 min Green  run 013 to Harlem/Lake    Harlem/Lake 30033 is next.
+#  3 min Green  run 014 to Harlem/Lake    Harlem/Lake 30099 is next.
+#  1 min Green  run 017 to Ashland/63rd   Ashland/63rd 30032 is next.
+################################################################################
+# JSON DATA LAYOUT
+#
 #{'ctatt':
-# {'tmst': '2018-03-05T01:59:10',
-# 'errCd': '0',
-# 'errNm': None,
+# {'tmst': '2018-03-05T01:59:10','errCd': '0','errNm': None,
 # 'route': [{'@name': 'g'},
 #           {'@name': 'y',
 #            'train': {'rn': '030',
@@ -41,7 +42,7 @@
 #                         'flags': None,
 #                           'lat': '41.89932', 'lon': '-87.66022',
 #                       'heading': '302'},
-#                      {'rn': '127', 'destSt': '30171', 'destNm': "O'Hare", 'trDr': '1', 'nextStaId': '40750', 'nextStpId': '30145', 'nextStaNm': "Harlem (O'Hare Branch)", 'prdt': '2018-03-05T01:58:33', 'arrT': '2018-03-05T02:00:33', 'isApp': '0', 'isDly': '0', 'flags': None, 'lat': '41.98244', 'lon': '-87.7851', 'heading': '278'},
+# ]}]}}
 ################################################################################
 ################################################################################
 import sys, time
@@ -73,67 +74,71 @@ def expand_lines_name(arg):
     }
     return switcher.get(arg)
 
-def train_run_print_line(line_name, arg):
-    nextStation = arg['nextStaNm']
-    run = arg['rn']
-    stopID = arg['nextStpId']
-    trainDestination = arg['destNm']
-    estArrivalTime = arg['arrT']
-    print('{00:{width}}'.format(text_time_difference_minutes(estArrivalTime),width=2), "min", expand_lines_name(line_name), "run", run, "to",'{:{width}}'.format(trainDestination,width=14), trainDestination, stopID, "is next.")
-    return
+def train_run_print_line(line_name, runItem):
+    run = runItem['rn']
+    stopID = runItem['nextStpId']
+    stopName = runItem['nextStaNm']
+    trainDestination = runItem['destNm']
+    estArrivalTime = runItem['arrT']
+    print('{00:{width}}'.format(text_time_difference_minutes(estArrivalTime),width=2), 
+        "min", expand_lines_name(line_name), 
+        "run", run, 
+        "to",'{:{width}}'.format(trainDestination,width=14),
+        stopName, "is next.")
 
 
-## ACCESS THE CTA DATASET - TRAIN ARRIVALS BY A PARTICULAR STATION
+## ACCESS THE CTA DATASET 
+#  - TRAIN ARRIVALS BY A PARTICULAR STATION
+# need error handling code for when the site can't be reached or internet connectivity is down
+base_url = "http://lapi.transitchicago.com/api/1.0/ttpositions.aspx?key="
 map_id = "40380"
-route_id = "G,Blue,Red,Brn,Y,Org,Pink,P"
+route_id = "&rt=G,Blue,Red,Brn,Y,Org,Pink,P"
 file_format = "&outputType=JSON"
-url = "http://lapi.transitchicago.com/api/1.0/ttpositions.aspx?key=" + secretapikey.cta_api_key + "&rt=" + route_id + file_format
-## need error handling code for when the site can't be reached or internet connectivity is down
-req = urllib.request.Request(url)
-print(url)
-
-##PARSE RESPONSE INTO A DICTIONARY OBJECT
-r = urllib.request.urlopen(req).read() # bytes of data
-trains_data = json.loads(r.decode('utf-8')) # dict object
-
-## PRINT THE ENTIRE DATASET RECEIVED
-#print(trains_data)
+trainTrackerPositionsURL = urllib.request.Request(base_url + secretapikey.cta_api_key + route_id + file_format)
+trainTrackerPositionsResponse = urllib.request.urlopen(trainTrackerPositionsURL).read() # bytes of data
+trainTrackerPositionsDataset = json.loads(trainTrackerPositionsResponse.decode('utf-8')) # dict object
 
 ## CHECK FOR REQUEST ERRORS
-if (trains_data['ctatt']['errCd'] != '0'): print("ERROR: ", trains_data['ctatt']['errCd'])
+if (trainTrackerPositionsDataset['ctatt']['errCd'] != '0'): 
+    print("ERROR: ", trainTrackerPositionsDataset['ctatt']['errCd'])
 
 ## CHECK THE TIMESTAMP OF THE DATA VS THE CURRENT TIME
-if text_time_difference_minutes(trains_data['ctatt']['tmst']) != 0:
-    print("DATA DELAY: ", text_time_difference_minutes(trains_data['ctatt']['tmst']), "minutes")
+# Print a data delay if the time stamp is not current
+if text_time_difference_minutes(trainTrackerPositionsDataset['ctatt']['tmst']) != 0:
+    print("DATA DELAY: ", text_time_difference_minutes(trainTrackerPositionsDataset['ctatt']['tmst']), "minutes")
 
 ## REPORT HEADING
-print("\nCTA TRAIN POSITIONS", datetime.datetime.strptime(trains_data['ctatt']['tmst'], '%Y-%m-%dT%H:%M:%S'), "\n")
+print("\nCTA TRAIN POSITIONS", datetime.datetime.strptime(trainTrackerPositionsDataset['ctatt']['tmst'], '%Y-%m-%dT%H:%M:%S'), "\n")
 
 ## PARSE DATASET
-# trains_data file / ctatt dataset / route by color / train run
-# - loop through the routes to pull out the color
-# - validate the route has runs using .get
+# trainTrackerPositionsDataset file / ctatt dataset / route by color / train run
+# - loop through the ROUTE to pull out the color
+# - validate the route has runs in an array
+#    Issue with parsing train lines that are single or empty! Need to handle no 'train' key: 
+#      {"@name":"y"},{"@name":"org","train":[{"rn":
+#      {"@name":"p","train":{"rn":"517",
+#      {"@name":"g","train":[{"rn":"015",
+#   https://stackoverflow.com/questions/49183806/coding-python-to-handle-json-array-inconsistencies
 # - loop through the runs within the routes
 # - extract the data for the train
+
 count = 0
-for train_rt in trains_data['ctatt']['route']:
+# for route in trainTrackerPositionsDataset['ctatt']['route']:
+#     line = route['@name']
+#     if route['train']:
+#         for run in route['train']:
+#             train_run_print_line(line, run)
+#             count = count + 1
+
+for train_rt in trainTrackerPositionsDataset['ctatt']['route']:
     line_name = train_rt['@name']
-    if train_rt.get('train') != None:
-        for train_run in train_rt['train']:
-            train_run_print_line(line_name, train_run)
-            count = count + 1
+    # if no runs, return empty data
+    train_runs = train_rt.get('train', [])
+    if not isinstance(train_runs, list):
+        # single entry, wrap
+        train_runs = [train_runs]
+    for train_run in train_runs:
+        train_run_print_line(line_name, train_run)
+        count = count + 1
 
-quit()
-
-
-######
-#for train_rt in trains_data['ctatt']['route']:
-#    line_name = train_rt['@name']
-#
-#    train_runs = train_rt.get('train', [])
-#    if not isinstance(train_runs, list):
-#        # single entry, wrap
-#        train_runs = [train_runs]
-#
-#    for train_run in train_runs:
-#        # ...
+print('Currently', count, 'runs.')
